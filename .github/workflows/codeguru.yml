@@ -53,7 +53,7 @@ jobs:
       uses: github/codeql-action/upload-sarif@v2
       with:
         sarif_file: codeguru-results.sarif
-    - name: code insights
+    - name: Publish to comments
       shell: bash  
       env:
         MY_TOKEN: ${{ secrets.MY_TOKEN }}

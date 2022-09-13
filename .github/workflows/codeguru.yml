@@ -72,7 +72,8 @@ jobs:
       uses: github/codeql-action/upload-sarif@v2
       with:
         sarif_file: codeguru-results.sarif
-
+        
+    # publish contents of SARIF file to pull request comments
     - name: Publish to comments
       if: steps.iam-role.outcome == 'success'
       shell: bash  

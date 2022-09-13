@@ -62,17 +62,19 @@ jobs:
         build_path: ./target/classes
         
     - name: Rename file 
-      run: mv codeguru-results.sarif.json codeguru-results.sarif
-
-    - name: Delete file 
-      run: rm -f codeguru-results.sarif.json    
+      if: steps.iam-role.outcome == 'success'
+      run: |
+          mv codeguru-results.sarif.json codeguru-results.sarif
+          rm -f codeguru-results.sarif.json    
     
     - name: Upload review result
+      if: steps.iam-role.outcome == 'success'
       uses: github/codeql-action/upload-sarif@v2
       with:
         sarif_file: codeguru-results.sarif
 
     - name: Publish to comments
+      if: steps.iam-role.outcome == 'success'
       shell: bash  
       env:
         MY_TOKEN: ${{ secrets.MY_TOKEN }}
@@ -86,4 +88,4 @@ jobs:
           echo github.event.issue.number = ${{ github.event.issue.number }}
           url="https://github.com/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments"
           echo $url
-          GITHUB_TOKEN=$MY_TOKEN npx @security-alert/sarif-to-comment --commentUrl "$url" --sarifContentOwner "bineeshcertified" --sarifContentRepo "amazon-codeguru-reviewer-sample-app" --sarifContentBranch "master" --simple "./codeguru-results.sarif"
+          GITHUB_TOKEN=$MY_TOKEN npx @security-alert/sarif-to-comment --commentUrl "$url" --sarifContentOwner "${{github.repository_owner}}" --sarifContentRepo "${{ github.event.repo.name }}" --sarifContentBranch "master" --simple "./codeguru-results.sarif"

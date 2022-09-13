@@ -61,6 +61,9 @@ jobs:
           npm install @security-alert/sarif-to-comment   
           pwd
           ls -l   
+          echo github.event.number = ${{ github.event.number  }}
+          echo github.event.pull_request.number = ${{ github.event.pull_request.number }}
+          echo github.event.issue.number = ${{ github.event.issue.number }}
           url="https://github.com/${{ github.repository }}/issues/1/comments"
           echo $url
           GITHUB_TOKEN=$MY_TOKEN npx @security-alert/sarif-to-comment --commentUrl "$url" --sarifContentOwner "bineeshcertified" --sarifContentRepo "amazon-codeguru-reviewer-sample-app" --sarifContentBranch "master"  "./codeguru-results.sarif"

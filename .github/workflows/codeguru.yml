@@ -6,7 +6,7 @@ name: Analyze with CodeGuru Reviewer
 
 on: 
   pull_request:
-    types: [opened]
+    types: [opened,reopened]
 
 permissions:
     id-token: write

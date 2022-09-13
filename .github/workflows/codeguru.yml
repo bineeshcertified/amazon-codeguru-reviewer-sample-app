@@ -1,8 +1,12 @@
 name: Analyze with CodeGuru Reviewer
 
+# on: 
+#  - push
+#  - workflow_dispatch # This allows manual triggering of the action through the GitHub UI.
+
 on: 
- - push
- - workflow_dispatch # This allows manual triggering of the action through the GitHub UI.
+  pull_request:
+    types: [opened,reopened]
 
 permissions:
     id-token: write
@@ -14,6 +18,20 @@ jobs:
     name: Analyze with CodeGuru Reviewer
     runs-on: ubuntu-latest
     steps:
+    - name: Dump GitHub context
+      id: github_context_step
+      run: echo '${{ toJSON(github) }}'
+    - name: Dump job context
+      run: echo '${{ toJSON(job) }}'
+    - name: Dump steps context
+      run: echo '${{ toJSON(steps) }}'
+    - name: Dump runner context
+      run: echo '${{ toJSON(runner) }}'
+    - name: Dump strategy context
+      run: echo '${{ toJSON(strategy) }}'
+    - name: Dump matrix context
+      run: echo '${{ toJSON(matrix) }}'
+      
     - name: Configure AWS credentials
       id: iam-role
       continue-on-error: false
@@ -44,23 +62,31 @@ jobs:
         build_path: ./target/classes
         
     - name: Rename file 
-      run: mv codeguru-results.sarif.json codeguru-results.sarif
-
-    - name: Delete file 
-      run: rm -f codeguru-results.sarif.json    
+      if: steps.iam-role.outcome == 'success'
+      run: |
+          mv codeguru-results.sarif.json codeguru-results.sarif
+          rm -f codeguru-results.sarif.json    
     
     - name: Upload review result
+      if: steps.iam-role.outcome == 'success'
       uses: github/codeql-action/upload-sarif@v2
       with:
         sarif_file: codeguru-results.sarif
-    - name: code insights
+        
+    # publish contents of SARIF file to pull request comments
+    - name: Publish to comments
+      if: steps.iam-role.outcome == 'success'
       shell: bash  
       env:
         MY_TOKEN: ${{ secrets.MY_TOKEN }}
+        PR_NUMBER: ${{ github.event.number }}
       run: |
           npm install @security-alert/sarif-to-comment   
           pwd
           ls -l   
-          url="https://github.com/${{ github.repository }}/issues/1/comments"
+          echo github.event.number = ${{ github.event.number  }}
+          echo github.event.pull_request.number = ${{ github.event.pull_request.number }}
+          echo github.event.issue.number = ${{ github.event.issue.number }}
+          url="https://github.com/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments"
           echo $url
-          GITHUB_TOKEN=$MY_TOKEN npx @security-alert/sarif-to-comment --commentUrl "$url" --sarifContentOwner "bineeshcertified" --sarifContentRepo "amazon-codeguru-reviewer-sample-app" --sarifContentBranch "master"  "./codeguru-results.sarif"
+          GITHUB_TOKEN=$MY_TOKEN npx @security-alert/sarif-to-comment --commentUrl "$url" --sarifContentOwner "${{github.repository_owner}}" --sarifContentRepo "${{ github.event.repo.name }}" --sarifContentBranch "master" --simple "./codeguru-results.sarif"

@@ -1,4 +1,4 @@
-package com.shipmentEvents.handlers;
+package com.shipmentEvents.demo;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
@@ -100,6 +100,7 @@ public class EventHandler implements RequestHandler<ScheduledEvent, String> {
             if (s3Client.doesObjectExist(Constants.SUMMARY_BUCKET, summaryUpdateName)) {
                 break;
             }
+            //whats going on here
             logger.log("waiting for file to be created " + summaryUpdateName);
             Thread.sleep(1000);
         }
@@ -113,6 +114,7 @@ public class EventHandler implements RequestHandler<ScheduledEvent, String> {
         }
         
     }
+    
 
     private List<KeyVersion> processEventsInBucket(String bucketName, LambdaLogger logger, Map<String, Pair<Long, String>> latestStatusForTrackingNumber) {
         final AmazonS3 s3Client = EventHandler.getS3Client();
@@ -120,7 +122,15 @@ public class EventHandler implements RequestHandler<ScheduledEvent, String> {
 
         ObjectListing files = s3Client.listObjects(bucketName);
         List<KeyVersion> filesProcessed = new ArrayList<DeleteObjectsRequest.KeyVersion>();
-
+        HashMap<String, Integer> daysOfTheWeek = new HashMap<>();
+        daysOfTheWeek.put("Monday", 0);
+        daysOfTheWeek.put("Tuesday", 1);
+        daysOfTheWeek.put("Wednesday", 2);
+        daysOfTheWeek.put("Thursday", 3);
+        daysOfTheWeek.put("Friday", 4);
+        daysOfTheWeek.put("Saturday", 5);
+        daysOfTheWeek.put("Sunday", 6);
+        
         for (Iterator<?> iterator = files.getObjectSummaries().iterator(); iterator.hasNext(); ) {
             S3ObjectSummary summary = (S3ObjectSummary) iterator.next();
             logger.log("Reading Object: " + summary.getKey());
